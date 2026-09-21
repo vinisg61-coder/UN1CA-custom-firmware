@@ -68,7 +68,7 @@ if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "34" ]; then
     ADD_TO_WORK_DIR "a73xqxx" "vendor" "bin/hw/wpa_supplicant" 0 2000 755 "u:object_r:hal_wifi_supplicant_default_exec:s0"
 fi
 
-if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "36" ]; then
+if false; then # desabilitado para One UI 8.5 (SDK 36) - blobs desatualizados faltando eglSubDriverAndroid.so em a73xqxx
     ADD_TO_WORK_DIR "a73xqxx" "vendor" "lib/egl/eglSubDriverAndroid.so" 0 0 644 "u:object_r:same_process_hal_file:s0"
     ADD_TO_WORK_DIR "a73xqxx" "vendor" "lib/egl/libEGL_adreno.so" 0 0 644 "u:object_r:same_process_hal_file:s0"
     ADD_TO_WORK_DIR "a73xqxx" "vendor" "lib/egl/libGLESv1_CM_adreno.so" 0 0 644 "u:object_r:same_process_hal_file:s0"
