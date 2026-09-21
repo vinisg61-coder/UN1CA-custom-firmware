@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   build:
+    if: false # desabilitado - ExtremeKernel é só exynos990 (c1s/c2s/x1s/y2slte/z3s), não tem para a52sxq (sm7325)
     runs-on: ubuntu-24.04
 
     strategy:

@@ -25,7 +25,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [c2s, c1s, x1s, y2slte, y2s, z3s, r8s]
+        # Original: [c2s, c1s, x1s, y2slte, y2s, z3s, r8s] - desabilitado, só a52sxq
+        target: [a52sxq]
 
     steps:
       - name: Checkout repo

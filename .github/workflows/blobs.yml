@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   update:
+    if: false # desabilitado - update blobs não é para a52sxq no momento
     runs-on: ubuntu-24.04
 
     strategy:
