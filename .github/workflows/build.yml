@@ -87,6 +87,14 @@ jobs:
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/build_dependencies.sh
 
+      - name: Cache firmwares
+        uses: actions/cache@v4
+        with:
+          path: out/fw
+          key: fw-${{ matrix.target }}-${{ hashFiles('unica/configs/qssi.sh', 'unica/configs/essi.sh', 'target/a52sxq/config.sh') }}
+          restore-keys: |
+            fw-${{ matrix.target }}-
+
       - name: Download stock firmwares
         uses: nick-fields/retry@v4
         with:
