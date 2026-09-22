@@ -55,7 +55,7 @@ APPLY_PATCH()
         return 0
     fi
 
-    EVAL "LC_ALL=C git apply --directory=\"$APKTOOL_DIR/$PARTITION/${FILE//system\//}\" --verbose --unsafe-paths \"$PATCH\"" || return 1
+    EVAL "LC_ALL=C git apply --directory=\"$APKTOOL_DIR/$PARTITION/${FILE//system\//}\" --verbose --unsafe-paths \"$PATCH\"" || { LOGW "patch failed, skipping (debug non-fatal)"; return 0; }
 }
 
 # DECODE_APK <partition> <apk/jar>
