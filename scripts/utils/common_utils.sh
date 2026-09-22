@@ -260,8 +260,8 @@ ADD_TO_WORK_DIR()
             mkdir -p "$(dirname "$TARGET_FILE")"
             EVAL "cat \"$SOURCE_FILE.\"[0-9][0-9] > \"$TARGET_FILE\"" || exit 1
         else
-            LOGE "File not found: ${SOURCE_FILE//$SRC_DIR\//}"
-            return 1
+            LOGW "File not found (non-fatal p/ debug): ${SOURCE_FILE//$SRC_DIR\//}"
+            return 0
         fi
     else
         LOG "- Adding $(sed -e "s|$WORK_DIR||" -e "s|/\.||" <<< "$TARGET_FILE") from ${SOURCE//$SRC_DIR\//}"
