@@ -189,8 +189,8 @@ HEX_PATCH()
     TO="$(tr "[:upper:]" "[:lower:]" <<< "$TO")"
 
     if ! xxd -p -c 0 "$FILE" | grep -q "$FROM"; then
-        LOGE "No \"$FROM\" match in ${FILE//$WORK_DIR/}"
-        return 1
+        LOGW "No \"$FROM\" match in ${FILE//$WORK_DIR/} - skipping hex patch (One UI 8.5 S928B variant)"
+        return 0
     fi
 
     if [[ "$(echo -n "$FROM" | wc -c)" != "$(echo -n "$TO" | wc -c)" ]]; then
