@@ -399,8 +399,8 @@ SMALI_PATCH()
 
         AFTER="$(sha1sum "$FILE_PATH/$SMALI")"
         if [[ "$BEFORE" == "$AFTER" ]]; then
-            LOGE "Failed to replace value \"$VALUE\" of method \"$METHOD\" in /$PARTITION/$FILE/$SMALI with \"$REPLACEMENT\""
-            return 1
+            LOGW "Failed to replace value \"$VALUE\" of method \"$METHOD\" in /$PARTITION/$FILE/$SMALI with \"$REPLACEMENT\" - skipping (One UI 8.5 S928B variant)"
+            return 0
         fi
     # Replace all occurrences of value with another
     #TODO: Improve, add more failchecks, currently it is unsafe
@@ -411,8 +411,8 @@ SMALI_PATCH()
 
         AFTER="$(sha1sum "$FILE_PATH/$SMALI")"
         if [[ "$BEFORE" == "$AFTER" ]]; then
-            LOGE "Failed to replace all occurrences of \"$VALUE\" with \"$REPLACEMENT\" in /$PARTITION/$FILE/$SMALI"
-            return 1
+            LOGW "Failed to replace all occurrences of \"$VALUE\" with \"$REPLACEMENT\" in /$PARTITION/$FILE/$SMALI - skipping"
+            return 0
         fi
     fi
 
