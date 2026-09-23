@@ -146,13 +146,27 @@ if $SOURCE_AUDIO_SUPPORT_VIRTUAL_VIBRATION_SOUND; then
             "$MODPATH/audio/virtual_vib/framework.jar/0001-Disable-virtual-vibration-support.patch"
         APPLY_PATCH "system" "system/framework/services.jar" \
             "$MODPATH/audio/virtual_vib/services.jar/0001-Disable-virtual-vibration-support.patch"
-        SMALI_PATCH "system" "system/framework/services.jar" \
-            "smali/com/android/server/audio/BtHelper\$\$ExternalSyntheticLambda0.smali" "remove"
-        EVAL "sed -i \"/.source/q\" \"$APKTOOL_DIR/system/framework/services.jar/smali_classes2/com/android/server/vibrator/VibratorManagerInternal.smali\""
-        SMALI_PATCH "system" "system/framework/services.jar" \
-            "smali_classes2/com/android/server/vibrator/VibratorManagerService\$SamsungBroadcastReceiver\$\$ExternalSyntheticLambda1.smali" "remove"
-        SMALI_PATCH "system" "system/framework/services.jar" \
-            "smali_classes2/com/android/server/vibrator/VirtualVibSoundHelper.smali" "remove"
+
+        # The helper cleanup below is only safe when the services.jar patch
+        # actually landed: with the untouched donor code still calling those
+        # helpers, removing them would break services.jar at boot. Keep them
+        # in place until the patch is regenerated for One UI 8.5.
+        if [ "$APPLY_PATCH_RESULT" == "failed" ]; then
+            LOGW "virtual vibration services.jar patch not applied - skipping helper cleanup (debug non-fatal)"
+        else
+            SMALI_PATCH "system" "system/framework/services.jar" \
+                "smali/com/android/server/audio/BtHelper\$\$ExternalSyntheticLambda0.smali" "remove"
+            if [ -f "$APKTOOL_DIR/system/framework/services.jar/smali_classes2/com/android/server/vibrator/VibratorManagerInternal.smali" ]; then
+                EVAL "sed -i \"/.source/q\" \"$APKTOOL_DIR/system/framework/services.jar/smali_classes2/com/android/server/vibrator/VibratorManagerInternal.smali\"" || \
+                    LOGW "could not trim VibratorManagerInternal.smali (debug non-fatal)"
+            else
+                LOGW "VibratorManagerInternal.smali not found in donor services.jar (debug non-fatal)"
+            fi
+            SMALI_PATCH "system" "system/framework/services.jar" \
+                "smali_classes2/com/android/server/vibrator/VibratorManagerService\$SamsungBroadcastReceiver\$\$ExternalSyntheticLambda1.smali" "remove"
+            SMALI_PATCH "system" "system/framework/services.jar" \
+                "smali_classes2/com/android/server/vibrator/VirtualVibSoundHelper.smali" "remove"
+        fi
         APPLY_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
             "$MODPATH/audio/virtual_vib/SecSettings.apk/0001-Disable-virtual-vibration-support.patch"
         APPLY_PATCH "system" "system/priv-app/SettingsProvider/SettingsProvider.apk" \
