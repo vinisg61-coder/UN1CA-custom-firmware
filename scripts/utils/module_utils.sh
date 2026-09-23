@@ -15,8 +15,32 @@ ABORT()
     return 1
 }
 
+# _STASH_PATCH_TARGETS <partition> <apk/jar> <patch>
+# Debug aid: save every file a failed patch targets so the CI workflow can
+# upload them as an artifact and the patch can be regenerated against the
+# actual One UI 8.5 donor sources.
+_STASH_PATCH_TARGETS()
+{
+    local PARTITION="$1"
+    local FILE="$2"
+    local PATCH="$3"
+
+    local ROOT="$APKTOOL_DIR/$PARTITION/${FILE//system\//}"
+    local STASH="$OUT_DIR/target/$TARGET_CODENAME/debug/failed_patches/${PATCH#$SRC_DIR/}"
+    local REL
+
+    while IFS= read -r REL; do
+        [ -f "$ROOT/$REL" ] || continue
+        mkdir -p "$STASH/$(dirname "$REL")"
+        cp -a "$ROOT/$REL" "$STASH/$REL"
+        LOG "  - Stashed ${PATCH#$SRC_DIR/} target \"$REL\" for artifact upload"
+    done < <(grep "^diff --git " "$PATCH" | sed -e 's|^diff --git a/||' -e 's| b/.*$||')
+}
+
 # APPLY_PATCH <partition> <apk/jar> <patch>
 # Applies a unified diff patch to the provided APK/JAR decoded directory.
+# Sets APPLY_PATCH_RESULT to "applied", "already" or "failed" so callers can
+# gate follow-up cleanup steps on the patch actually landing.
 APPLY_PATCH()
 {
     _CHECK_NON_EMPTY_PARAM "PARTITION" "$1" || return 1
@@ -26,6 +50,8 @@ APPLY_PATCH()
     local PARTITION="$1"
     local FILE="$2"
     local PATCH="$3"
+
+    APPLY_PATCH_RESULT="failed"
 
     if ! IS_VALID_PARTITION_NAME "$PARTITION"; then
         LOGE "\"$PARTITION\" is not a valid partition name"
@@ -52,10 +78,19 @@ APPLY_PATCH()
         --directory="$APKTOOL_DIR/$PARTITION/${FILE//system\//}" \
         --reverse --check --unsafe-paths "$PATCH" > /dev/null 2>&1; then
         LOG "  - Patch is already applied; skipping"
+        APPLY_PATCH_RESULT="already"
         return 0
     fi
 
-    EVAL "LC_ALL=C git apply --directory=\"$APKTOOL_DIR/$PARTITION/${FILE//system\//}\" --verbose --unsafe-paths \"$PATCH\"" || { LOGW "patch failed, skipping (debug non-fatal)"; return 0; }
+    EVAL "LC_ALL=C git apply --directory=\"$APKTOOL_DIR/$PARTITION/${FILE//system\//}\" --verbose --unsafe-paths \"$PATCH\"" || {
+        LOGW "patch failed, skipping (debug non-fatal)"
+        APPLY_PATCH_RESULT="failed"
+        _STASH_PATCH_TARGETS "$PARTITION" "$FILE" "$PATCH"
+        return 0
+    }
+
+    APPLY_PATCH_RESULT="applied"
+    return 0
 }
 
 # DECODE_APK <partition> <apk/jar>
@@ -190,6 +225,17 @@ HEX_PATCH()
 
     if ! xxd -p -c 0 "$FILE" | grep -q "$FROM"; then
         LOGW "No \"$FROM\" match in ${FILE//$WORK_DIR/} - skipping hex patch (One UI 8.5 S928B variant)"
+
+        # Debug aid: keep the unpatched binary so a new instruction variant
+        # can be located and the patch regenerated from the CI artifact.
+        local HEX_STASH_REL="${FILE#$OUT_DIR/}"
+        if [ "$HEX_STASH_REL" = "$FILE" ]; then
+            HEX_STASH_REL="$(basename "$FILE")"
+        fi
+        mkdir -p "$OUT_DIR/target/$TARGET_CODENAME/debug/failed_hex/$(dirname "$HEX_STASH_REL")"
+        cp -a "$FILE" "$OUT_DIR/target/$TARGET_CODENAME/debug/failed_hex/$HEX_STASH_REL"
+        LOG "  - Stashed ${FILE//$WORK_DIR/} for artifact upload"
+
         return 0
     fi
 

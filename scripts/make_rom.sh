@@ -219,6 +219,13 @@ if [ -d "$WORK_DIR" ]; then
     rm -rf "${WORK_DIR:?}"
 fi
 
+# Dump of files targeted by failed patches, regenerated on every run so the
+# uploaded debug artifact only ever contains the current build's failures.
+if [ -d "$OUT_DIR/target/$TARGET_CODENAME/debug" ]; then
+    LOG "- Cleaning previous debug artifact dump"
+    rm -rf "$OUT_DIR/target/$TARGET_CODENAME/debug"
+fi
+
 if $FORCE || ! $USE_APK_CACHE; then
     # A regular invocation intentionally performs a clean ROM rebuild and
     # refreshes the APK/JAR cache. Cache reuse is opt-in with -c.

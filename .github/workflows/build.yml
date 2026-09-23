@@ -134,6 +134,17 @@ jobs:
         run: |
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/make_rom.sh
+
+      # Debug aid: files a failed patch/hex patch targeted, kept so the
+      # One UI 8.5 patches can be regenerated against the real donor sources.
+      - name: Upload failed patch debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-artifacts-${{ matrix.target }}
+          path: out/target/${{ matrix.target }}/debug/
+          if-no-files-found: ignore
+          retention-days: 7
           
       - name: Upload to Pixeldrain, GitHub Release, Split, XML
         if: github.event_name == 'workflow_dispatch'
