@@ -12,6 +12,7 @@ APPLY_MODULE()
     local MODPATH="$1"
     local MODNAME
     local MODAUTH
+    local MOD_STATUS
 
     if [ ! -d "$MODPATH" ]; then
         LOGE "Folder not found: ${MODPATH//$SRC_DIR\//}"
@@ -52,10 +53,22 @@ APPLY_MODULE()
         fi
     fi
 
-    READ_AND_APPLY_PROPS "$MODPATH"
+    READ_AND_APPLY_PROPS "$MODPATH" || \
+        LOGW "props of \"$MODNAME\" failed (debug non-fatal) - continuing"
 
     if [ -f "$MODPATH/customize.sh" ]; then
+        # [
+        # Debug run: disable errexit for the whole module so one failing
+        # command cannot hide the remaining errors of this module. Every
+        # failure is still printed (LOGE or the command's own stderr).
+        set +e
         . "$MODPATH/customize.sh"
+        MOD_STATUS="$?"
+        set -e
+        # ]
+        if [ "$MOD_STATUS" -ne 0 ]; then
+            LOGW "module \"$MODNAME\" failed with status $MOD_STATUS (debug non-fatal) - continuing"
+        fi
     fi
 
     if [ -d "$MODPATH/smali" ]; then
@@ -134,7 +147,8 @@ elif [ ! -d "$1" ]; then
 fi
 
 while IFS= read -r f; do
-    APPLY_MODULE "$f"
+    # Debug run: a failed module must not hide the remaining modules.
+    APPLY_MODULE "$f" || LOGW "skipping failed module \"$f\" (debug non-fatal) - continuing"
 done < <(find "$1" -mindepth 1 -maxdepth 1 -type d | LC_ALL=C sort)
 
 exit 0
