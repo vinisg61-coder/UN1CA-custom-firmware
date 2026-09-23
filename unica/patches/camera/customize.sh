@@ -365,8 +365,17 @@ if [ -f "$WORK_DIR/system/system/lib64/libstagefright.so" ]; then
     # Source platform's ACodec reads 512 bytes into a 255-byte buffer via __fread_chk,
     # causing SIGABRT in mediaserver when third-party apps (WhatsApp/Telegram) use
     # the video encoder. Patch the read size from 0x200 to 0xff to match the buffer.
+    # One UI 8.5 (S928B) moved the FILE* register from x20 to x21.
+    FREAD_FROM="02408052e30314aae41f8052"
+    FREAD_TO="e21f8052e30314aae41f8052"
+    if ! xxd -p -c 0 "$WORK_DIR/system/system/lib64/libstagefright.so" | \
+            grep -q "$FREAD_FROM"; then
+        FREAD_FROM="02408052e30315aae41f8052"
+        FREAD_TO="e21f8052e30315aae41f8052"
+    fi
     HEX_PATCH "$WORK_DIR/system/system/lib64/libstagefright.so" \
-        "02408052e30314aae41f8052" "e21f8052e30314aae41f8052"
+        "$FREAD_FROM" "$FREAD_TO"
+    unset FREAD_FROM FREAD_TO
 else
     LOG "- Skipping 64-bit libstagefright model patch (library is absent)"
 fi
