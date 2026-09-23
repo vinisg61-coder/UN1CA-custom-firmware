@@ -4,11 +4,11 @@ Date: Tue, 26 Aug 2025 22:55:05 +0200
 Subject: [PATCH] Backport legacy SehLights HAL code
 
 ---
- ...LocalDisplayAdapter$BacklightAdapter.smali |  94 +++--
- .../lights/LightsService$LightImpl.smali      | 325 +++++++++++-------
- .../server/power/PowerManagerUtil.smali       |  28 +-
- .../light/ISehLights$Stub$Proxy.smali         |   6 +-
- 4 files changed, 282 insertions(+), 171 deletions(-)
+ smali/com/android/server/display/LocalDisplayAdapter$BacklightAdapter.smali |   94 +++++++++++---
+ smali/com/android/server/lights/LightsService$LightImpl.smali           |   56 ++++++++++----
+ smali_classes2/com/android/server/power/PowerManagerUtil.smali          |   28 +++-----------
+ smali_classes2/vendor/samsung/hardware/light/ISehLights$Stub$Proxy.smali |    7 ++++----------
+ 4 files changed, 121 insertions(+), 64 deletions(-)
 
 diff --git a/smali/com/android/server/display/LocalDisplayAdapter$BacklightAdapter.smali b/smali/com/android/server/display/LocalDisplayAdapter$BacklightAdapter.smali
 index 113049643..8a1f4f852 100644
@@ -204,7 +204,7 @@ diff --git a/smali/com/android/server/lights/LightsService$LightImpl.smali b/sma
 index ee66d0c2a..726bd7d0b 100644
 --- a/smali/com/android/server/lights/LightsService$LightImpl.smali
 +++ b/smali/com/android/server/lights/LightsService$LightImpl.smali
-@@ -384,257 +384,334 @@
+@@ -384,262 +384,286 @@
  .end method
  
  .method public final setLightLocked(IIII)V
@@ -228,438 +228,282 @@ index ee66d0c2a..726bd7d0b 100644
 +.end method
 +
 +.method public final setLightLocked(IIIII)V
-     .locals 11
+-    .locals 11
++    .locals 12
  
--    iget-boolean v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mInitialized:Z
-+    move-object v0, p0
- 
--    iget-object v1, p0, Lcom/android/server/lights/LightsService$LightImpl;->this$0:Lcom/android/server/lights/LightsService;
-+    move v1, p1
- 
--    if-eqz v0, :cond_0
-+    move v2, p3
- 
--    iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mColor:I
-+    move v3, p4
- 
--    if-ne p1, v0, :cond_0
-+    move/from16 v4, p5
- 
--    iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mMode:I
-+    iget-boolean v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->mInitialized:Z
- 
--    if-ne p2, v0, :cond_0
-+    if-eqz v5, :cond_0
- 
--    iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
-+    iget v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->mColor:I
- 
--    if-ne p3, v0, :cond_0
-+    if-ne v1, v5, :cond_0
- 
--    iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
-+    iget v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->mMode:I
- 
--    if-ne p4, v0, :cond_0
-+    if-ne v2, v5, :cond_0
- 
--    iget-boolean v0, v1, Lcom/android/server/lights/LightsService;->mIsLEDChanged:Z
-+    iget v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
- 
--    if-eqz v0, :cond_5
-+    if-ne v3, v5, :cond_0
++    move v11, p2
 +
-+    iget v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
 +
-+    if-ne v4, v5, :cond_0
-+
-+    iget-object v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->this$0:Lcom/android/server/lights/LightsService;
-+
-+    iget-boolean v5, v5, Lcom/android/server/lights/LightsService;->mIsLEDChanged:Z
-+
-+    if-eqz v5, :cond_4
+     iget-boolean v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mInitialized:Z
+ 
+     iget-object v1, p0, Lcom/android/server/lights/LightsService$LightImpl;->this$0:Lcom/android/server/lights/LightsService;
+ 
+     if-eqz v0, :cond_1
+ 
+     iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mColor:I
+ 
+     if-ne p1, v0, :cond_1
+ 
+     iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mMode:I
+ 
+-    if-ne p2, v0, :cond_1
++    if-ne p3, v0, :cond_1
+ 
+     iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
+ 
+-    if-ne p3, v0, :cond_1
++    if-ne p4, v0, :cond_1
+ 
+     iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
+ 
+-    if-ne p4, v0, :cond_1
++    if-ne p5, v0, :cond_1
+ 
+     iget-boolean v0, v1, Lcom/android/server/lights/LightsService;->mIsLEDChanged:Z
+ 
+     if-eqz v0, :cond_0
+ 
+     goto :goto_0
  
      :cond_0
--    const/4 v0, 0x0
-+    iget-object v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->this$0:Lcom/android/server/lights/LightsService;
-+
-+    const/4 v6, 0x0
- 
--    iput-boolean v0, v1, Lcom/android/server/lights/LightsService;->mIsLEDChanged:Z
-+    iput-boolean v6, v5, Lcom/android/server/lights/LightsService;->mIsLEDChanged:Z
- 
--    const/4 v0, 0x1
-+    const/4 v5, 0x1
- 
--    iput-boolean v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mInitialized:Z
-+    iput-boolean v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->mInitialized:Z
- 
--    iput p1, p0, Lcom/android/server/lights/LightsService$LightImpl;->mColor:I
-+    iput v1, v0, Lcom/android/server/lights/LightsService$LightImpl;->mColor:I
- 
--    iput p2, p0, Lcom/android/server/lights/LightsService$LightImpl;->mMode:I
-+    iput v2, v0, Lcom/android/server/lights/LightsService$LightImpl;->mMode:I
- 
--    iput p3, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
-+    iput v3, v0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
- 
--    iput p4, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
-+    iput v4, v0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
- 
--    iget-object p0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
-+    iget-object v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
- 
--    iget-byte v0, p0, Landroid/hardware/light/HwLight;->type:B
-+    iget-byte v5, v5, Landroid/hardware/light/HwLight;->type:B
- 
--    const-string/jumbo v2, "LightsService"
-+    const-string v7, "LightsService"
- 
--    if-eqz v0, :cond_1
-+    if-eqz v5, :cond_1
- 
--    const/16 v3, 0x9
-+    iget-object v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
- 
--    if-eq v0, v3, :cond_1
-+    iget-byte v5, v5, Landroid/hardware/light/HwLight;->type:B
- 
--    new-instance v0, Ljava/lang/StringBuilder;
-+    const/16 v8, 0x9
- 
--    const-string/jumbo v3, "[SvcLED] [setLightLocked] lightType:"
-+    if-eq v5, v8, :cond_1
- 
--    invoke-direct {v0, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-+    new-instance v5, Ljava/lang/StringBuilder;
- 
--    iget-byte v3, p0, Landroid/hardware/light/HwLight;->type:B
-+    const-string v8, "[SvcLED] [setLightLocked] lightType:"
- 
--    invoke-static {v3}, Lcom/android/server/lights/LightsService;->translateLightType(I)Ljava/lang/String;
-+    invoke-direct {v5, v8}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
- 
--    move-result-object v3
-+    iget-object v8, v0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
- 
--    invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    iget-byte v8, v8, Landroid/hardware/light/HwLight;->type:B
- 
--    const-string v3, ", color:"
-+    invoke-static {v8}, Lcom/android/server/lights/LightsService;->translateLightType(I)Ljava/lang/String;
- 
--    invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    move-result-object v8
- 
--    invoke-virtual {v0, p1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-+    invoke-virtual {v5, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
- 
--    const-string v3, ", mode: "
-+    move-result-object v5
- 
--    invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    const-string v8, ", color:"
- 
--    const-string v3, ", onMS: "
-+    invoke-virtual {v5, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
- 
--    const-string v4, ", offMS: "
-+    move-result-object v5
- 
--    invoke-static {p2, p3, v3, v4, v0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
-+    invoke-virtual {v5, p1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
- 
--    invoke-static {v0, p4, v2}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
-+    move-result-object v5
-+
-+    const-string v8, ", mode: "
-+
-+    invoke-virtual {v5, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+
-+    move-result-object v5
-+
-+    invoke-virtual {v5, p3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-+
-+    move-result-object v5
-+
-+    const-string v8, ", onMS: "
-+
-+    invoke-virtual {v5, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+
-+    move-result-object v5
-+
-+    invoke-virtual {v5, p4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-+
-+    move-result-object v5
-+
-+    const-string v8, ", offMS: "
-+
-+    invoke-virtual {v5, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+
-+    move-result-object v5
-+
-+    invoke-virtual {v5, v4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-+
-+    move-result-object v5
-+
-+    invoke-virtual {v5}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-+
-+    move-result-object v5
-+
-+    invoke-static {v7, v5}, Lcom/android/server/power/Slog;->d(Ljava/lang/String;Ljava/lang/String;)I
+     return-void
  
      :cond_1
--    new-instance v0, Ljava/lang/StringBuilder;
-+    new-instance v5, Ljava/lang/StringBuilder;
+     :goto_0
+     const/4 v0, 0x0
  
--    const-string/jumbo v3, "setLightState("
-+    const-string v8, "setLightState("
+     iput-boolean v0, v1, Lcom/android/server/lights/LightsService;->mIsLEDChanged:Z
  
--    invoke-direct {v0, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-+    invoke-direct {v5, v8}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+     const/4 v0, 0x1
  
--    iget v3, p0, Landroid/hardware/light/HwLight;->id:I
-+    iget-object v8, v0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
+     iput-boolean v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mInitialized:Z
  
--    invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-+    iget v8, v8, Landroid/hardware/light/HwLight;->id:I
+     iput p1, p0, Lcom/android/server/lights/LightsService$LightImpl;->mColor:I
  
--    const-string v3, ", 0x"
-+    invoke-virtual {v5, v8}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+-    iput p2, p0, Lcom/android/server/lights/LightsService$LightImpl;->mMode:I
++    iput p3, p0, Lcom/android/server/lights/LightsService$LightImpl;->mMode:I
  
--    invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    move-result-object v5
-+
-+    const-string v8, ", 0x"
-+
-+    invoke-virtual {v5, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+
-+    move-result-object v5
+-    iput p3, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
++    iput p4, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
+ 
+-    iput p4, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
++    iput p5, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
+ 
+     iget-object p0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
+ 
+     iget-byte v0, p0, Landroid/hardware/light/HwLight;->type:B
+ 
+     const-string/jumbo v2, "LightsService"
+ 
+     if-eqz v0, :cond_2
+ 
+     const/16 v3, 0x9
+ 
+     if-eq v0, v3, :cond_2
+ 
+     new-instance v0, Ljava/lang/StringBuilder;
+ 
+     const-string/jumbo v3, "[SvcLED] [setLightLocked] lightType:"
+ 
+     invoke-direct {v0, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+ 
+     iget-byte v3, p0, Landroid/hardware/light/HwLight;->type:B
+ 
+     invoke-static {v3}, Lcom/android/server/lights/LightsService;->translateLightType(I)Ljava/lang/String;
+ 
+     move-result-object v3
+ 
+     invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+     const-string v3, ", color:"
+ 
+     invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+     invoke-virtual {v0, p1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+ 
+     const-string v3, ", mode: "
+ 
+     invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+     const-string v3, ", onMS: "
+ 
+     const-string v4, ", offMS: "
+ 
+-    invoke-static {p2, p3, v3, v4, v0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
++    invoke-static {p3, p4, v3, v4, v0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
+ 
+-    invoke-static {v0, p4, v2}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
++    invoke-static {v0, p5, v2}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
+ 
+     :cond_2
+     new-instance v0, Ljava/lang/StringBuilder;
+ 
+     const-string/jumbo v3, "setLightState("
+ 
+     invoke-direct {v0, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+ 
+     iget v3, p0, Landroid/hardware/light/HwLight;->id:I
+ 
+     invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+ 
+     const-string v3, ", 0x"
+ 
+     invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
  
      invoke-static {p1}, Ljava/lang/Integer;->toHexString(I)Ljava/lang/String;
  
--    move-result-object v3
-+    move-result-object v8
+     move-result-object v3
  
--    invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    invoke-virtual {v5, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
  
--    const-string v3, ")"
-+    move-result-object v5
+     const-string v3, ")"
  
--    invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-+    const-string v8, ")"
+     invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
  
--    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-+    invoke-virtual {v5, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+     invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
  
--    move-result-object v0
-+    move-result-object v5
+     move-result-object v0
  
--    const-wide/32 v3, 0x20000
-+    invoke-virtual {v5}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+     const-wide/32 v3, 0x20000
  
--    invoke-static {v3, v4, v0}, Landroid/os/Trace;->traceBegin(JLjava/lang/String;)V
-+    move-result-object v5
+     invoke-static {v3, v4, v0}, Landroid/os/Trace;->traceBegin(JLjava/lang/String;)V
  
--    :try_start_0
--    iget-object v0, v1, Lcom/android/server/lights/LightsService;->mVintfLights:Ljava/util/function/Supplier;
-+    const-wide/32 v8, 0x20000
+     :try_start_0
+     iget-object v0, v1, Lcom/android/server/lights/LightsService;->mVintfLights:Lcom/android/server/lights/LightsService$VintfHalCache;
  
--    const/4 v10, 0x0
-+    invoke-static {v8, v9, v5}, Landroid/os/Trace;->traceBegin(JLjava/lang/String;)V
+     const/4 v10, 0x0
  
--    if-nez v0, :cond_2
-+    :try_start_0
-+    iget-object v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->this$0:Lcom/android/server/lights/LightsService;
+     if-nez v0, :cond_3
  
--    iget-object v0, v1, Lcom/android/server/lights/LightsService;->mVintfSehLights:Ljava/util/function/Supplier;
-+    iget-object v5, v5, Lcom/android/server/lights/LightsService;->mVintfLights:Ljava/util/function/Supplier;
+     iget-object v0, v1, Lcom/android/server/lights/LightsService;->mVintfSehLights:Lcom/android/server/lights/LightsService$VintfHalCache;
  
--    if-eqz v0, :cond_3
-+    if-nez v5, :cond_2
+     if-eqz v0, :cond_4
  
--    :cond_2
--    move v6, p1
-+    iget-object v5, v0, Lcom/android/server/lights/LightsService$LightImpl;->this$0:Lcom/android/server/lights/LightsService;
+     :cond_3
+     move v6, p1
  
 -    move v7, p2
-+    iget-object v5, v5, Lcom/android/server/lights/LightsService;->mVintfSehLights:Ljava/util/function/Supplier;
++    move v7, p3
  
 -    move v8, p3
-+    if-nez v5, :cond_2
++    move v8, p4
  
 -    move v9, p4
-+    iget-object v0, v0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
++    move v9, p5
  
--    goto :goto_0
-+    iget v0, v0, Landroid/hardware/light/HwLight;->id:I
+     goto :goto_1
  
--    :cond_3
--    iget v5, p0, Landroid/hardware/light/HwLight;->id:I
-+    const/4 v5, 0x0
+     :cond_4
+     iget v5, p0, Landroid/hardware/light/HwLight;->id:I
  
--    move v6, p1
-+    move v1, p1
+     move v6, p1
  
 -    move v7, p2
-+    move v2, p3
++    move v7, p3
  
 -    move v8, p3
-+    move v3, p4
++    move v8, p4
  
 -    move v9, p4
-+    move/from16 v4, p5
++    move v9, p5
  
--    invoke-static/range {v5 .. v10}, Lcom/android/server/lights/LightsService;->setLight_native(IIIIII)V
-+    invoke-static/range {v0 .. v5}, Lcom/android/server/lights/LightsService;->setLight_native(IIIIII)V
+     invoke-static/range {v5 .. v10}, Lcom/android/server/lights/LightsService;->setLight_native(IIIIII)V
  
--    goto :goto_1
-+    goto :goto_0
+     goto :goto_2
  
--    :catchall_0
--    move-exception v0
-+    :cond_2
-+    new-instance v5, Landroid/hardware/light/HwLightState;
+     :catchall_0
+     move-exception v0
  
--    move-object p0, v0
-+    const/4 v10, 0x0
+     move-object p0, v0
  
--    goto :goto_3
-+    invoke-direct {v5}, Landroid/hardware/light/HwLightState;-><init>()V
+     goto :goto_4
  
--    :catch_0
--    move-exception v0
-+    iput v1, v5, Landroid/hardware/light/HwLightState;->color:I
+     :catch_0
+     move-exception v0
  
--    move-object p0, v0
-+    int-to-byte v1, v2
+     move-object p0, v0
  
--    goto :goto_2
-+    iput-byte v1, v5, Landroid/hardware/light/HwLightState;->flashMode:B
+     goto :goto_3
  
--    :goto_0
--    new-instance p1, Landroid/hardware/light/HwLightState;
-+    iput v3, v5, Landroid/hardware/light/HwLightState;->flashOnMs:I
+     :goto_1
+     new-instance p1, Landroid/hardware/light/HwLightState;
  
--    invoke-direct {p1}, Landroid/hardware/light/HwLightState;-><init>()V
-+    iput v4, v5, Landroid/hardware/light/HwLightState;->flashOffMs:I
+     invoke-direct {p1}, Landroid/hardware/light/HwLightState;-><init>()V
  
--    iput v6, p1, Landroid/hardware/light/HwLightState;->color:I
-+    iput-byte v6, v5, Landroid/hardware/light/HwLightState;->brightnessMode:B
+     iput v6, p1, Landroid/hardware/light/HwLightState;->color:I
  
--    int-to-byte p2, v7
-+    iget-object v1, v0, Lcom/android/server/lights/LightsService$LightImpl;->this$0:Lcom/android/server/lights/LightsService;
+     int-to-byte p2, v7
  
--    iput-byte p2, p1, Landroid/hardware/light/HwLightState;->flashMode:B
-+    iget-object v1, v1, Lcom/android/server/lights/LightsService;->mVintfLights:Ljava/util/function/Supplier;
+     iput-byte p2, p1, Landroid/hardware/light/HwLightState;->flashMode:B
  
--    iput v8, p1, Landroid/hardware/light/HwLightState;->flashOnMs:I
-+    if-eqz v1, :cond_3
+     iput v8, p1, Landroid/hardware/light/HwLightState;->flashOnMs:I
  
--    iput v9, p1, Landroid/hardware/light/HwLightState;->flashOffMs:I
-+    iget-object v1, v0, Lcom/android/server/lights/LightsService$LightImpl;->this$0:Lcom/android/server/lights/LightsService;
+     iput v9, p1, Landroid/hardware/light/HwLightState;->flashOffMs:I
  
--    int-to-byte p2, v10
-+    iget-object v1, v1, Lcom/android/server/lights/LightsService;->mVintfLights:Ljava/util/function/Supplier;
+     int-to-byte p2, v10
  
--    iput-byte p2, p1, Landroid/hardware/light/HwLightState;->brightnessMode:B
-+    invoke-interface {v1}, Ljava/util/function/Supplier;->get()Ljava/lang/Object;
+     iput-byte p2, p1, Landroid/hardware/light/HwLightState;->brightnessMode:B
  
--    iget-object p2, v1, Lcom/android/server/lights/LightsService;->mVintfLights:Ljava/util/function/Supplier;
-+    move-result-object v1
+     iget-object p2, v1, Lcom/android/server/lights/LightsService;->mVintfLights:Lcom/android/server/lights/LightsService$VintfHalCache;
  
--    if-eqz p2, :cond_4
-+    check-cast v1, Landroid/hardware/light/ILights;
+     if-eqz p2, :cond_5
  
--    invoke-interface {p2}, Ljava/util/function/Supplier;->get()Ljava/lang/Object;
-+    iget-object v0, v0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
+     invoke-virtual {p2}, Lcom/android/server/lights/LightsService$VintfHalCache;->get()Ljava/lang/Object;
  
--    move-result-object p2
-+    iget v0, v0, Landroid/hardware/light/HwLight;->id:I
+     move-result-object p2
  
--    check-cast p2, Landroid/hardware/light/ILights;
-+    check-cast v1, Landroid/hardware/light/ILights$Stub$Proxy;
+     check-cast p2, Landroid/hardware/light/ILights;
  
--    iget p0, p0, Landroid/hardware/light/HwLight;->id:I
-+    invoke-virtual {v1, v0, v5}, Landroid/hardware/light/ILights$Stub$Proxy;->setLightState(ILandroid/hardware/light/HwLightState;)V
+     iget p0, p0, Landroid/hardware/light/HwLight;->id:I
  
--    check-cast p2, Landroid/hardware/light/ILights$Stub$Proxy;
-+    goto :goto_0
+     check-cast p2, Landroid/hardware/light/ILights$Stub$Proxy;
  
--    invoke-virtual {p2, p0, p1}, Landroid/hardware/light/ILights$Stub$Proxy;->setLightState(ILandroid/hardware/light/HwLightState;)V
-+    :cond_3
-+    iget-object v1, v0, Lcom/android/server/lights/LightsService$LightImpl;->this$0:Lcom/android/server/lights/LightsService;
+     invoke-virtual {p2, p0, p1}, Landroid/hardware/light/ILights$Stub$Proxy;->setLightState(ILandroid/hardware/light/HwLightState;)V
  
--    goto :goto_1
-+    iget-object v1, v1, Lcom/android/server/lights/LightsService;->mVintfSehLights:Ljava/util/function/Supplier;
+     goto :goto_2
  
--    :cond_4
--    iget-object p2, v1, Lcom/android/server/lights/LightsService;->mVintfSehLights:Ljava/util/function/Supplier;
-+    invoke-interface {v1}, Ljava/util/function/Supplier;->get()Ljava/lang/Object;
-+
-+    move-result-object v1
+     :cond_5
+     iget-object p2, v1, Lcom/android/server/lights/LightsService;->mVintfSehLights:Lcom/android/server/lights/LightsService$VintfHalCache;
  
--    invoke-interface {p2}, Ljava/util/function/Supplier;->get()Ljava/lang/Object;
-+    check-cast v1, Lvendor/samsung/hardware/light/ISehLights;
+     invoke-virtual {p2}, Lcom/android/server/lights/LightsService$VintfHalCache;->get()Ljava/lang/Object;
  
--    move-result-object p2
-+    iget-object v0, v0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
+     move-result-object p2
  
--    check-cast p2, Lvendor/samsung/hardware/light/ISehLights;
-+    iget v0, v0, Landroid/hardware/light/HwLight;->id:I
+     check-cast p2, Lvendor/samsung/hardware/light/ISehLights;
  
--    iget p0, p0, Landroid/hardware/light/HwLight;->id:I
-+    move v2, p2
+     iget p0, p0, Landroid/hardware/light/HwLight;->id:I
  
--    check-cast p2, Lvendor/samsung/hardware/light/ISehLights$Stub$Proxy;
-+    check-cast v1, Lvendor/samsung/hardware/light/ISehLights$Stub$Proxy;
+     check-cast p2, Lvendor/samsung/hardware/light/ISehLights$Stub$Proxy;
  
 -    invoke-virtual {p2, p0, p1}, Lvendor/samsung/hardware/light/ISehLights$Stub$Proxy;->setLightState(ILandroid/hardware/light/HwLightState;)V
-+    invoke-virtual {v1, v0, v5, p2}, Lvendor/samsung/hardware/light/ISehLights$Stub$Proxy;->setLightState(ILandroid/hardware/light/HwLightState;I)V
++    invoke-virtual {p2, p0, p1, v11}, Lvendor/samsung/hardware/light/ISehLights$Stub$Proxy;->setLightState(ILandroid/hardware/light/HwLightState;I)V
      :try_end_0
      .catch Landroid/os/RemoteException; {:try_start_0 .. :try_end_0} :catch_0
      .catch Ljava/lang/UnsupportedOperationException; {:try_start_0 .. :try_end_0} :catch_0
      .catchall {:try_start_0 .. :try_end_0} :catchall_0
  
--    :goto_1
--    invoke-static {v3, v4}, Landroid/os/Trace;->traceEnd(J)V
-+    goto :goto_0
+     :goto_2
+     invoke-static {v3, v4}, Landroid/os/Trace;->traceEnd(J)V
  
--    return-void
-+    :catchall_0
-+    move-exception v0
-+
-+    goto :goto_1
-+
-+    :catch_0
-+    move-exception v0
+     return-void
  
--    :goto_2
+     :goto_3
      :try_start_1
--    const-string p1, "Failed issuing setLightState"
-+    const-string v1, "Failed issuing setLightState"
+     const-string p1, "Failed issuing setLightState"
  
--    invoke-static {v2, p1, p0}, Lcom/android/server/power/Slog;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
-+    invoke-static {v7, v1, v0}, Lcom/android/server/power/Slog;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+     invoke-static {v2, p1, p0}, Lcom/android/server/power/Slog;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
      :try_end_1
      .catchall {:try_start_1 .. :try_end_1} :catchall_0
  
--    invoke-static {v3, v4}, Landroid/os/Trace;->traceEnd(J)V
-+    :goto_0
-+    invoke-static {v8, v9}, Landroid/os/Trace;->traceEnd(J)V
+     invoke-static {v3, v4}, Landroid/os/Trace;->traceEnd(J)V
  
--    :cond_5
-+    :cond_4
      return-void
  
--    :goto_3
--    invoke-static {v3, v4}, Landroid/os/Trace;->traceEnd(J)V
-+    :goto_1
-+    invoke-static {v8, v9}, Landroid/os/Trace;->traceEnd(J)V
+     :goto_4
+     invoke-static {v3, v4}, Landroid/os/Trace;->traceEnd(J)V
  
--    throw p0
-+    throw v0
+     throw p0
++.end method
  .end method
  
  .method public final turnOff()V
@@ -675,11 +519,11 @@ index 643509f16..a8798ac9c 100644
 -
 -    invoke-static {v8, v0}, Landroid/os/SystemProperties;->getInt(Ljava/lang/String;I)I
 -
--    move-result v3
+-    move-result v2
 -
--    if-ge v3, v1, :cond_1d
+-    if-ge v2, v1, :cond_1d
 -
--    move/from16 v16, v2
+-    move/from16 v16, v3
 -
 -    goto :goto_1c
 -
@@ -688,7 +532,7 @@ index 643509f16..a8798ac9c 100644
 -
 -    :goto_1c
 -    sput-boolean v16, Lcom/android/server/power/PowerManagerUtil;->SEC_FEATURE_USE_LIGHTS_HAL_EXTENSION:Z
-+    sput-boolean v2, Lcom/android/server/power/PowerManagerUtil;->SEC_FEATURE_USE_LIGHTS_HAL_EXTENSION:Z
++    sput-boolean v3, Lcom/android/server/power/PowerManagerUtil;->SEC_FEATURE_USE_LIGHTS_HAL_EXTENSION:Z
  
      const-string v1, "-1"
  
@@ -707,8 +551,8 @@ index 643509f16..a8798ac9c 100644
  
 -    if-lt v1, v0, :cond_1e
 +    if-lt v1, v0, :cond_1d
- 
-     move v0, v2
+
+     move v0, v3
  
 -    goto :goto_1d
 +    goto :goto_1c
@@ -720,8 +564,8 @@ index 643509f16..a8798ac9c 100644
 -    :goto_1d
 +    :goto_1c
      sput-boolean v0, Lcom/android/server/power/PowerManagerUtil;->SEC_FEATURE_DISPLAY_STATE_CONCURRENCY:Z
- 
-     sput-boolean v2, Lcom/android/server/power/PowerManagerUtil;->USE_SEC_LONG_TERM_MODEL:Z
+
+     const-string v0, "0"
 diff --git a/smali_classes2/vendor/samsung/hardware/light/ISehLights$Stub$Proxy.smali b/smali_classes2/vendor/samsung/hardware/light/ISehLights$Stub$Proxy.smali
 index c7d8dda02..c9b40fc54 100644
 --- a/smali_classes2/vendor/samsung/hardware/light/ISehLights$Stub$Proxy.smali
