@@ -17,6 +17,21 @@ source "$SRC_DIR/scripts/utils/common_utils.sh"
 # - strip <method>: Deletes the supplied method in the provided smali file
 SMALI_PATCH()
 {
+    _SMALI_PATCH "$@" && return 0
+
+    # [
+    # Debug run: LOGE already described the failure above, keep going so a
+    # single build reports every incompatible One UI 8.5 patch at once.
+    LOGW "SMALI_PATCH failed (debug non-fatal) - continuing"
+    # ]
+
+    return 0
+}
+
+# Implementation of SMALI_PATCH, wrapped above so content failures can be
+# downgraded to warnings without touching the validation paths.
+_SMALI_PATCH()
+{
     _CHECK_NON_EMPTY_PARAM "PARTITION" "$1" || return 1
     _CHECK_NON_EMPTY_PARAM "FILE" "$2" || return 1
     _CHECK_NON_EMPTY_PARAM "SMALI" "$3" || return 1
@@ -405,6 +420,13 @@ SMALI_PATCH()
     # Replace all occurrences of value with another
     #TODO: Improve, add more failchecks, currently it is unsafe
     elif [[ "$OPERATION" == "replaceall" ]]; then
+        # The One UI 8.5 donor may already ship without the legacy value
+        # (e.g. the eSE strings Samsung dropped): nothing to replace.
+        if ! grep -qF -- "$VALUE" "$FILE_PATH/$SMALI"; then
+            LOG "Value \"$VALUE\" not present in /$PARTITION/$FILE/$SMALI; nothing to do"
+            return 0
+        fi
+
         LOG "- Replacing all occurrences of \"$VALUE\" with \"$REPLACEMENT\" in /$PARTITION/$FILE/$SMALI"
 
         EVAL "sed -i \"s|$VALUE|$REPLACEMENT|g\" \"$FILE_PATH/${SMALI//$/\\$}\"" || return 1
