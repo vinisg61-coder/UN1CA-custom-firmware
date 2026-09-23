@@ -204,7 +204,7 @@ diff --git a/smali/com/android/server/lights/LightsService$LightImpl.smali b/sma
 index ee66d0c2a..726bd7d0b 100644
 --- a/smali/com/android/server/lights/LightsService$LightImpl.smali
 +++ b/smali/com/android/server/lights/LightsService$LightImpl.smali
-@@ -384,262 +384,285 @@
+@@ -384,262 +384,297 @@
  .end method
  
  .method public final setLightLocked(IIII)V
@@ -252,12 +252,16 @@ index ee66d0c2a..726bd7d0b 100644
      iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
  
 -    if-ne p3, v0, :cond_1
-+    if-ne p4, v0, :cond_1
++    move/from16 v2, p4
++
++    if-ne v2, v0, :cond_1
  
      iget v0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
  
 -    if-ne p4, v0, :cond_1
-+    if-ne p5, v0, :cond_1
++    move/from16 v2, p5
++
++    if-ne v2, v0, :cond_1
  
      iget-boolean v0, v1, Lcom/android/server/lights/LightsService;->mIsLEDChanged:Z
  
@@ -284,10 +288,14 @@ index ee66d0c2a..726bd7d0b 100644
 +    iput p3, p0, Lcom/android/server/lights/LightsService$LightImpl;->mMode:I
  
 -    iput p3, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
-+    iput p4, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
++    move/from16 v2, p4
++
++    iput v2, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOnMS:I
  
 -    iput p4, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
-+    iput p5, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
++    move/from16 v2, p5
++
++    iput v2, p0, Lcom/android/server/lights/LightsService$LightImpl;->mOffMS:I
  
      iget-object p0, p0, Lcom/android/server/lights/LightsService$LightImpl;->mHwLight:Landroid/hardware/light/HwLight;
  
@@ -330,10 +338,14 @@ index ee66d0c2a..726bd7d0b 100644
      const-string v4, ", offMS: "
  
 -    invoke-static {p2, p3, v3, v4, v0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
-+    invoke-static {p3, p4, v3, v4, v0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
++    move/from16 v5, p4
++
++    invoke-static {p3, v5, v3, v4, v0}, Lcom/android/server/ServiceKeeper$$ExternalSyntheticOutline0;->m(IILjava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;)V
  
 -    invoke-static {v0, p4, v2}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
-+    invoke-static {v0, p5, v2}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
++    move/from16 v5, p5
++
++    invoke-static {v0, v5, v2}, Lcom/android/server/BatteryService$$ExternalSyntheticOutline0;->m(Ljava/lang/StringBuilder;ILjava/lang/String;)V
  
      :cond_2
      new-instance v0, Ljava/lang/StringBuilder;
@@ -386,10 +398,10 @@ index ee66d0c2a..726bd7d0b 100644
 +    move v7, p3
  
 -    move v8, p3
-+    move v8, p4
++    move/16 v8, p4
  
 -    move v9, p4
-+    move v9, p5
++    move/16 v9, p5
  
      goto :goto_1
  
@@ -402,10 +414,10 @@ index ee66d0c2a..726bd7d0b 100644
 +    move v7, p3
  
 -    move v8, p3
-+    move v8, p4
++    move/16 v8, p4
  
 -    move v9, p4
-+    move v9, p5
++    move/16 v9, p5
  
      invoke-static/range {v5 .. v10}, Lcom/android/server/lights/LightsService;->setLight_native(IIIIII)V
  
