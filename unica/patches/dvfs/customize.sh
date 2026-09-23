@@ -6,6 +6,32 @@ fi
 
 _LOG() { if $DEBUG; then LOGW "$1"; else ABORT "$1"; fi }
 
+# The donor hardcodes its own SIOP policy name inside <clinit>()V, and the
+# SOURCE_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME value in unica/configs may be
+# stale (it was copied from the S23 FE configuration). Read the real constant
+# from the decoded donor smali instead of trusting the config file.
+FIND_DONOR_SSRM_POLICY()
+{
+    local SMALI_FILE="$1"
+    local CANDIDATES
+    local FOUND
+
+    [ -f "$SMALI_FILE" ] || return 1
+
+    CANDIDATES="$(awk '
+        /^\.method/ && index($0, "<clinit>()V") { inside = 1 }
+        inside { print }
+        inside && /^\.end method/ { exit }
+    ' "$SMALI_FILE" | grep -o "siop_[A-Za-z0-9_]*" | sort -u)"
+    [ "$CANDIDATES" ] || return 1
+
+    # Prefer the device specific policy over generic fallback names.
+    FOUND="$(grep -vxF "siop_default" <<< "$CANDIDATES" | head -n 1)"
+    [ "$FOUND" ] || FOUND="$(head -n 1 <<< "$CANDIDATES")"
+
+    echo "$FOUND"
+}
+
 # Samsung renames the obfuscated SDHMS classes between platform releases.
 # Keep the known One UI 8.0 paths as the default and select their 8.5
 # counterparts when building from the S23 FE source.
@@ -53,11 +79,24 @@ fi
 if [[ "$SOURCE_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME" != "$TARGET_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME" ]]; then
     SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_SYSTEM_CONFIG_SIOP_POLICY_FILENAME" "$TARGET_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME"
 
-    SMALI_PATCH "system" "system/framework/ssrm.jar" \
-        "smali/com/android/server/ssrm/Feature.smali" "replace" \
-        "<clinit>()V" \
-        "$SOURCE_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME" \
-        "$TARGET_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME"
+    DECODE_APK "system" "system/framework/ssrm.jar"
+    DONOR_SSRM="$(FIND_DONOR_SSRM_POLICY "$APKTOOL_DIR/system/framework/ssrm.jar/smali/com/android/server/ssrm/Feature.smali")" || DONOR_SSRM=""
+
+    if [ ! "$DONOR_SSRM" ]; then
+        # One UI 8.5 may read the SIOP policy from floating_feature.xml only.
+        LOG "- Donor does not hardcode an SSRM policy in ssrm.jar; floating_feature.xml value is used"
+    elif [ "$DONOR_SSRM" == "$TARGET_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME" ]; then
+        LOG "- ssrm.jar already targets \"$DONOR_SSRM\"; skipping"
+    else
+        if [ "$DONOR_SSRM" != "$SOURCE_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME" ]; then
+            LOG "- Donor SSRM policy detected as \"$DONOR_SSRM\" (config: \"$SOURCE_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME\")"
+        fi
+        SMALI_PATCH "system" "system/framework/ssrm.jar" \
+            "smali/com/android/server/ssrm/Feature.smali" "replace" \
+            "<clinit>()V" \
+            "$DONOR_SSRM" \
+            "$TARGET_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME"
+    fi
 
     DECODE_APK "system" "system/priv-app/SamsungDeviceHealthManagerService/SamsungDeviceHealthManagerService.apk"
 
@@ -76,11 +115,18 @@ if [[ "$SOURCE_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME" != "$TARGET_DVFSAPP_CONFIG_S
     fi
 
     # com/sec/android/sdhms/util/Feature
-    SMALI_PATCH "system" "system/priv-app/SamsungDeviceHealthManagerService/SamsungDeviceHealthManagerService.apk" \
-        "$SSRM_FEATURE_SMALI" "replace" \
-        "<clinit>()V" \
-        "$SOURCE_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME" \
-        "$TARGET_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME"
+    DONOR_SSRM="$(FIND_DONOR_SSRM_POLICY "$APKTOOL_DIR/system/priv-app/SamsungDeviceHealthManagerService/SamsungDeviceHealthManagerService.apk/$SSRM_FEATURE_SMALI")" || DONOR_SSRM=""
+    if [ ! "$DONOR_SSRM" ]; then
+        LOG "- Donor does not hardcode an SSRM policy in SDHMS; floating_feature.xml value is used"
+    elif [ "$DONOR_SSRM" == "$TARGET_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME" ]; then
+        LOG "- SDHMS already targets \"$DONOR_SSRM\"; skipping"
+    else
+        SMALI_PATCH "system" "system/priv-app/SamsungDeviceHealthManagerService/SamsungDeviceHealthManagerService.apk" \
+            "$SSRM_FEATURE_SMALI" "replace" \
+            "<clinit>()V" \
+            "$DONOR_SSRM" \
+            "$TARGET_DVFSAPP_CONFIG_SSRM_POLICY_FILENAME"
+    fi
 fi
 
 if [ -f "$SRC_DIR/target/$TARGET_CODENAME/dvfs/siop_model.xml" ]; then
@@ -107,4 +153,5 @@ else
 fi
 
 unset -f _LOG
+unset -f FIND_DONOR_SSRM_POLICY
 unset DVFS_FEATURE_SMALI DVFS_PROPERTIES_SMALI SSRM_FEATURE_SMALI
