@@ -29,6 +29,13 @@ _STASH_PATCH_TARGETS()
     local STASH="$OUT_DIR/target/$TARGET_CODENAME/debug/failed_patches/${PATCH#$SRC_DIR/}"
     local REL
 
+    # Full file map of the decoded tree: lets missing-file failures be
+    # retargeted (renamed classes/dexes in One UI 8.5) without another run.
+    mkdir -p "$STASH"
+    if [ -d "$ROOT" ]; then
+        ( cd "$ROOT" && find . -type f | LC_ALL=C sort ) > "$STASH/TREE.txt" 2> /dev/null
+    fi
+
     while IFS= read -r REL; do
         [ -f "$ROOT/$REL" ] || continue
         mkdir -p "$STASH/$(dirname "$REL")"

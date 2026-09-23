@@ -226,6 +226,19 @@ if [ -d "$OUT_DIR/target/$TARGET_CODENAME/debug" ]; then
     rm -rf "$OUT_DIR/target/$TARGET_CODENAME/debug"
 fi
 
+# Stock target firmware references: audit TARGET_* config flags against the
+# real A52s firmware instead of guessing (e.g. WLAN feature support).
+if [ -f "$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/etc/floating_feature.xml" ]; then
+    mkdir -p "$OUT_DIR/target/$TARGET_CODENAME/debug/stock_target"
+    cp -a "$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/etc/floating_feature.xml" \
+        "$OUT_DIR/target/$TARGET_CODENAME/debug/stock_target/floating_feature.xml"
+fi
+if [ -f "$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/build.prop" ]; then
+    mkdir -p "$OUT_DIR/target/$TARGET_CODENAME/debug/stock_target"
+    cp -a "$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/build.prop" \
+        "$OUT_DIR/target/$TARGET_CODENAME/debug/stock_target/build.prop"
+fi
+
 if $FORCE || ! $USE_APK_CACHE; then
     # A regular invocation intentionally performs a clean ROM rebuild and
     # refreshes the APK/JAR cache. Cache reuse is opt-in with -c.
