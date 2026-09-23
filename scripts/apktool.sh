@@ -18,6 +18,52 @@ THREAD_COUNT=""
 INPUT_FILE=""
 OUTPUT_PATH=""
 
+# _APKTOOL_STASH_BUILD_FAILURE <decoded_dir> <build_log>
+# Debug aid: save the offending smali file plus per-dex unique method
+# reference counts, so failures like a 64K method pool overflow of the
+# rebuilt dex can be diagnosed from the CI artifact.
+_APKTOOL_STASH_BUILD_FAILURE()
+{
+    local DECODED_DIR="$1"
+    local BUILD_LOG="$2"
+    local JAR_NAME DEX_FOLDER METHOD CLASS REL STASH_BASE
+
+    JAR_NAME="$(basename "$INPUT_FILE")"
+    STASH_BASE="$OUT_DIR/target/$TARGET_CODENAME/debug/apktool_failures/$JAR_NAME"
+
+    DEX_FOLDER="$(grep -o 'Could not smali folder: [^ ]*' "$BUILD_LOG" | head -n 1)"
+    DEX_FOLDER="${DEX_FOLDER##*folder: }"
+    [ "$DEX_FOLDER" ] || DEX_FOLDER="smali"
+
+    METHOD="$(grep -o 'for method [^ ]*' "$BUILD_LOG" | head -n 1)"
+    METHOD="${METHOD##*method }"
+
+    if [ "$METHOD" ]; then
+        CLASS="${METHOD%%;->*}"
+        CLASS="${CLASS#L}"
+        CLASS="${CLASS%;}"
+        REL="$DEX_FOLDER/$CLASS.smali"
+        if [ -f "$DECODED_DIR/$REL" ]; then
+            mkdir -p "$STASH_BASE/$(dirname "$REL")"
+            cp -a "$DECODED_DIR/$REL" "$STASH_BASE/$REL"
+            LOG "  - Stashed $JAR_NAME/$REL for artifact upload"
+        else
+            LOGW "  - Culprit smali $REL not found in decoded tree"
+        fi
+    else
+        LOGW "  - Could not parse failing method from apktool output"
+    fi
+
+    local D FCOUNT MCOUNT
+    for D in "$DECODED_DIR"/smali*; do
+        [ -d "$D" ] || continue
+        FCOUNT="$(find "$D" -type f -name '*.smali' | wc -l)"
+        MCOUNT="$(grep -rhoE -- 'invoke-[a-z0-9/_-]+ \{[^}]*\}, L[^ ]+' "$D" 2>/dev/null | sort -u | wc -l)"
+        LOG "  - $(basename "$D"): $FCOUNT smali files, $MCOUNT unique method references"
+    done
+    LOG "  - Top-level packages in $DEX_FOLDER: $(ls "$DECODED_DIR/$DEX_FOLDER" 2>/dev/null | tr '\n' ' ')"
+}
+
 BUILD()
 {
     if [ ! -d "$OUTPUT_PATH" ]; then
@@ -32,7 +78,21 @@ BUILD()
     cp -a "$OUTPUT_PATH/original/META-INF" "$OUTPUT_PATH/build/apk/META-INF"
 
     # Build APK with --shorten-resource-paths (https://developer.android.com/tools/aapt2#optimize_options)
-    EVAL "apktool -JXmx${HEAP_SIZE}m b -j \"$THREAD_COUNT\" -p \"$FRAMEWORK_DIR\" -srp \"$OUTPUT_PATH\"" || exit 1
+    # Capture the output: on failure it is diagnosed below (offending smali
+    # file + per-dex reference counts for 64K pool overflow detection) so the
+    # One UI 8.5 failure can be fixed from the uploaded artifact instead of
+    # another blind run.
+    local BUILD_LOG
+    BUILD_LOG="$(mktemp "${TMPDIR:-/tmp}/apktool-build.XXXXXX")"
+    if apktool -JXmx${HEAP_SIZE}m b -j "$THREAD_COUNT" -p "$FRAMEWORK_DIR" -srp "$OUTPUT_PATH" > "$BUILD_LOG" 2>&1; then
+        rm -f "$BUILD_LOG"
+    else
+        LOGE "apktool build failed for ${INPUT_FILE//$WORK_DIR/}"
+        tail -n 25 "$BUILD_LOG" | sed 's/^/    /'
+        _APKTOOL_STASH_BUILD_FAILURE "$OUTPUT_PATH" "$BUILD_LOG"
+        rm -f "$BUILD_LOG"
+        exit 1
+    fi
 
     local FILE_NAME
     FILE_NAME="$(basename "$INPUT_FILE")"
