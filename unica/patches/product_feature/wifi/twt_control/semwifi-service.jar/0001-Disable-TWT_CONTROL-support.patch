@@ -5,46 +5,26 @@ Subject: [PATCH] Disable TWT_CONTROL support
 
 Remove feature ID 2 (TWT) from the Android 16 default driver feature map.
 ---
- .../server/wifi/driver/WifiDriverFeatureProvider.smali | 16 ----------------
- 1 file changed, 16 deletions(-)
+ smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali |   11 +++++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletions(-)
 
 diff --git a/smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali b/smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali
 --- a/smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali
 +++ b/smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali
-@@ -131,22 +131,6 @@
+@@ -131,4 +131,14 @@
  .method public final configDefaultFeatureSet()V
-     .locals 3
+     .locals 2
 
--    iget-object v0, p0, Lcom/samsung/android/server/wifi/driver/WifiDriverFeatureProvider;->mSwFeatureInteger:Ljava/util/HashMap;
--
--    const/4 v1, 0x2
--
--    invoke-static {v1}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
--
--    move-result-object v1
--
--    const/4 v2, 0x1
--
--    invoke-static {v2}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
--
--    move-result-object v2
--
--    invoke-virtual {v0, v1, v2}, Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
--
-     iget-object v0, p0, Lcom/samsung/android/server/wifi/driver/WifiDriverFeatureProvider;->mSwFeatureInteger:Ljava/util/HashMap;
-
-     const/4 v1, 0x3
-@@ -154,5 +138,11 @@
-     invoke-static {v1}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
-
-     move-result-object v1
-
-+    const/4 v2, 0x1
++    iget-object v0, p0, Lcom/samsung/android/server/wifi/driver/WifiDriverFeatureProvider;->mSwFeatureInteger:Ljava/util/HashMap;
 +
-+    invoke-static {v2}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
++    const/4 v1, 0x2
 +
-+    move-result-object v2
++    invoke-static {v1}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 +
-     invoke-virtual {v0, v1, v2}, Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
++    move-result-object v1
++
++    invoke-virtual {v0, v1}, Ljava/util/HashMap;->remove(Ljava/lang/Object;)Ljava/lang/Object;
++
+     iget v0, p0, Lcom/samsung/android/server/wifi/driver/WifiDriverFeatureProvider;->mVendorBuildVersion:I
 --
 2.51.0

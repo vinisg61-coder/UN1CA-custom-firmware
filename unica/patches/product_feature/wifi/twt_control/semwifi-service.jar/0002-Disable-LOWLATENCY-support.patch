@@ -4,38 +4,26 @@ Date: Sun, 31 Aug 2025 16:43:06 +0200
 Subject: [PATCH] Disable LOWLATENCY support
 
 ---
- .../driver/WifiDriverFeatureProvider.smali     | 18 +-----------------
- 1 file changed, 1 insertion(+), 17 deletions(-)
+ smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali |    9 ++++++++++++--
+ 1 file changed, 8 insertions(+), 1 deletions(-)
 
 diff --git a/smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali b/smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali
 index 8cd05c9..ae49e0e 100644
 --- a/smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali
 +++ b/smali/com/samsung/android/server/wifi/driver/WifiDriverFeatureProvider.smali
-@@ -145,23 +145,7 @@
- .end method
- 
- .method private configDefaultFeatureSet()V
--    .locals 3
--
--    iget-object v0, p0, Lcom/samsung/android/server/wifi/driver/WifiDriverFeatureProvider;->mSwFeatureInteger:Ljava/util/HashMap;
--
--    const/4 v1, 0x3
--
--    invoke-static {v1}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
--
--    move-result-object v1
--
--    const/4 v2, 0x1
--
--    invoke-static {v2}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
--
--    move-result-object v2
--
--    invoke-virtual {v0, v1, v2}, Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-+    .locals 2
- 
-     iget v0, p0, Lcom/samsung/android/server/wifi/driver/WifiDriverFeatureProvider;->mVendorBuildVersion:I
- 
--- 
-2.51.0
+@@ -154,5 +154,13 @@
+     invoke-virtual {p0, v0, v1}, Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 
++    const/4 v0, 0x3
++
++    invoke-static {v0}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
++
++    move-result-object v0
++
++    invoke-virtual {p0, v0}, Ljava/util/HashMap;->remove(Ljava/lang/Object;)Ljava/lang/Object;
++
+     :cond_0
+     return-void
+ .end method
+--
+2.51.0
