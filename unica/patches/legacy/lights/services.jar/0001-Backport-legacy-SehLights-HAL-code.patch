@@ -5,10 +5,10 @@ Subject: [PATCH] Backport legacy SehLights HAL code
 
 ---
  smali/com/android/server/display/LocalDisplayAdapter$BacklightAdapter.smali |   94 +++++++++++---
- smali/com/android/server/lights/LightsService$LightImpl.smali           |   56 ++++++++++----
+ smali/com/android/server/lights/LightsService$LightImpl.smali           |   55 ++++++++++----
  smali_classes2/com/android/server/power/PowerManagerUtil.smali          |   28 +++-----------
  smali_classes2/vendor/samsung/hardware/light/ISehLights$Stub$Proxy.smali |    7 ++++----------
- 4 files changed, 121 insertions(+), 64 deletions(-)
+ 4 files changed, 120 insertions(+), 64 deletions(-)
 
 diff --git a/smali/com/android/server/display/LocalDisplayAdapter$BacklightAdapter.smali b/smali/com/android/server/display/LocalDisplayAdapter$BacklightAdapter.smali
 index 113049643..8a1f4f852 100644
@@ -204,7 +204,7 @@ diff --git a/smali/com/android/server/lights/LightsService$LightImpl.smali b/sma
 index ee66d0c2a..726bd7d0b 100644
 --- a/smali/com/android/server/lights/LightsService$LightImpl.smali
 +++ b/smali/com/android/server/lights/LightsService$LightImpl.smali
-@@ -384,262 +384,286 @@
+@@ -384,262 +384,285 @@
  .end method
  
  .method public final setLightLocked(IIII)V
@@ -503,7 +503,6 @@ index ee66d0c2a..726bd7d0b 100644
      invoke-static {v3, v4}, Landroid/os/Trace;->traceEnd(J)V
  
      throw p0
-+.end method
  .end method
  
  .method public final turnOff()V

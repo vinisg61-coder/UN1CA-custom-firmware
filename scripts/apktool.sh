@@ -18,6 +18,34 @@ THREAD_COUNT=""
 INPUT_FILE=""
 OUTPUT_PATH=""
 
+# _FRAMEWORK_DEX_REBALANCE <decoded_dir>
+# The One UI 8.5 donor ships framework classes.dex with its method pool right
+# at the 64K edge; the methods our patches add push rebuilt invokes past it
+# ("Unsigned short value out of range" in apktool). Move the first big
+# peripheral package out of smali/ into a new dex to free pool room. Any dex
+# split is functionally identical (bootclasspath loads every dex by name).
+_FRAMEWORK_DEX_REBALANCE()
+{
+    local DECODED_DIR="$1"
+
+    [ -d "$DECODED_DIR/smali/android" ] || return 0
+    [ -d "$DECODED_DIR/smali_classes8" ] && return 0
+
+    local CANDIDATE PKG_COUNT
+    for CANDIDATE in media hardware net print service provider database text util graphics content view app os; do
+        [ -d "$DECODED_DIR/smali/android/$CANDIDATE" ] || continue
+        PKG_COUNT="$(find "$DECODED_DIR/smali/android/$CANDIDATE" -type f -name '*.smali' | wc -l)"
+        LOG "  - smali/android/$CANDIDATE: $PKG_COUNT smali files"
+        if [ "$PKG_COUNT" -ge 200 ]; then
+            mkdir -p "$DECODED_DIR/smali_classes8/android"
+            mv "$DECODED_DIR/smali/android/$CANDIDATE" "$DECODED_DIR/smali_classes8/android/$CANDIDATE"
+            LOG "  - Moved smali/android/$CANDIDATE ($PKG_COUNT files) to smali_classes8 (64K method pool relief)"
+            return 0
+        fi
+    done
+    LOGW "  - No suitable package found to relieve framework classes.dex"
+}
+
 # _APKTOOL_STASH_BUILD_FAILURE <decoded_dir> <build_log>
 # Debug aid: save the offending smali file plus per-dex unique method
 # reference counts, so failures like a 64K method pool overflow of the
@@ -26,23 +54,34 @@ _APKTOOL_STASH_BUILD_FAILURE()
 {
     local DECODED_DIR="$1"
     local BUILD_LOG="$2"
-    local JAR_NAME DEX_FOLDER METHOD CLASS REL STASH_BASE
+    local JAR_NAME DEX_FOLDER METHOD CLASS REL STASH_BASE SMALI_FILE
 
     JAR_NAME="$(basename "$INPUT_FILE")"
     STASH_BASE="$OUT_DIR/target/$TARGET_CODENAME/debug/apktool_failures/$JAR_NAME"
 
-    DEX_FOLDER="$(grep -o 'Could not smali folder: [^ ]*' "$BUILD_LOG" | head -n 1)"
+    DEX_FOLDER="$(grep -m1 -o 'Could not smali folder: [^ ]*' "$BUILD_LOG" | head -n 1)"
     DEX_FOLDER="${DEX_FOLDER##*folder: }"
     [ "$DEX_FOLDER" ] || DEX_FOLDER="smali"
 
-    METHOD="$(grep -o 'for method [^ ]*' "$BUILD_LOG" | head -n 1)"
-    METHOD="${METHOD##*method }"
+    # Parse error format ("Could not smali file: <path>") as well as the
+    # code-item format ("for method <class;->method").
+    SMALI_FILE="$(grep -m1 -o 'Could not smali file: [^ ]*' "$BUILD_LOG" | head -n 1)"
+    SMALI_FILE="${SMALI_FILE##*file: }"
+    if [ "$SMALI_FILE" ]; then
+        REL="${SMALI_FILE#$DECODED_DIR/}"
+        [ "$REL" = "$SMALI_FILE" ] && REL=""
+    else
+        METHOD="$(grep -m1 -o 'for method [^ ]*' "$BUILD_LOG" | head -n 1)"
+        METHOD="${METHOD##*method }"
+        if [ "$METHOD" ]; then
+            CLASS="${METHOD%%;->*}"
+            CLASS="${CLASS#L}"
+            CLASS="${CLASS%;}"
+            REL="$DEX_FOLDER/$CLASS.smali"
+        fi
+    fi
 
-    if [ "$METHOD" ]; then
-        CLASS="${METHOD%%;->*}"
-        CLASS="${CLASS#L}"
-        CLASS="${CLASS%;}"
-        REL="$DEX_FOLDER/$CLASS.smali"
+    if [ "$REL" ]; then
         if [ -f "$DECODED_DIR/$REL" ]; then
             mkdir -p "$STASH_BASE/$(dirname "$REL")"
             cp -a "$DECODED_DIR/$REL" "$STASH_BASE/$REL"
@@ -51,14 +90,15 @@ _APKTOOL_STASH_BUILD_FAILURE()
             LOGW "  - Culprit smali $REL not found in decoded tree"
         fi
     else
-        LOGW "  - Could not parse failing method from apktool output"
+        LOGW "  - Could not parse failing file from apktool output"
     fi
 
     local D FCOUNT MCOUNT
     for D in "$DECODED_DIR"/smali*; do
         [ -d "$D" ] || continue
         FCOUNT="$(find "$D" -type f -name '*.smali' | wc -l)"
-        MCOUNT="$(grep -rhoE -- 'invoke-[a-z0-9/_-]+ \{[^}]*\}, L[^ ]+' "$D" 2>/dev/null | sort -u | wc -l)"
+        # Unique method references (class+name+proto, registers stripped).
+        MCOUNT="$(grep -rhoE -- 'L[^ ]+;->[^ ]+\([^)]*\)[^ ]*' "$D" 2>/dev/null | sort -u | wc -l)"
         LOG "  - $(basename "$D"): $FCOUNT smali files, $MCOUNT unique method references"
     done
     LOG "  - Top-level packages in $DEX_FOLDER: $(ls "$DECODED_DIR/$DEX_FOLDER" 2>/dev/null | tr '\n' ' ')"
@@ -76,6 +116,14 @@ BUILD()
     # Copy original META-INF
     mkdir -p "$OUTPUT_PATH/build/apk"
     cp -a "$OUTPUT_PATH/original/META-INF" "$OUTPUT_PATH/build/apk/META-INF"
+
+    # Patched framework.jar overflows the 64K method pool of classes.dex on
+    # rebuild (One UI 8.5 donor is already at the edge). Rebalance first.
+    case "$INPUT_FILE" in
+        *"/system/framework/framework.jar")
+            _FRAMEWORK_DEX_REBALANCE "$OUTPUT_PATH"
+            ;;
+    esac
 
     # Build APK with --shorten-resource-paths (https://developer.android.com/tools/aapt2#optimize_options)
     # Capture the output: on failure it is diagnosed below (offending smali

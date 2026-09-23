@@ -4,24 +4,23 @@ Date: Mon, 8 Sep 2025 23:06:48 +0200
 Subject: [PATCH] Enable 80211AX_6GHZ support
 
 ---
- .../settings/wifi/slice/WifiSlice.smali       |  69 +-
- .../settings/wifi/slice/WifiSliceItem.smali   |   8 +
- ...dWifiEntry$$ExternalSyntheticLambda8.smali |  40 ++
- .../wifitrackerlib/StandardWifiEntry.smali    |  45 ++
- .../android/wifitrackerlib/WifiEntry.smali    | 635 ++++++++++++------
- .../wifi/AutoHotspotListAdapter.smali         | 102 ++-
- .../wifi/McfAutoHotspotListAdapter.smali      |  90 ++-
- .../settings/wifi/WifiListAdapter.smali       | 109 ++-
- .../android/settings/wifi/WifiSettings.smali  | 171 ++++-
- .../WifiAutoConnectPreferenceController.smali | 188 +-----
- .../WifiLabsWeeklyReportPreference.smali      |  54 +-
- 11 files changed, 946 insertions(+), 565 deletions(-)
- create mode 100644 smali/com/android/wifitrackerlib/StandardWifiEntry$$ExternalSyntheticLambda8.smali
+ smali_classes2/com/android/settings/wifi/slice/WifiSlice.smali          |   69 +++++++++++---
+ smali_classes2/com/android/settings/wifi/slice/WifiSliceItem.smali      |    8 ++++++++++++++
+ smali_classes2/com/android/wifitrackerlib/StandardWifiEntry$$ExternalSyntheticLambda8.smali |   40 ++++++++++++++
+ smali_classes2/com/android/wifitrackerlib/StandardWifiEntry.smali       |   45 ++++++++++++++
+ smali_classes2/com/android/wifitrackerlib/WifiEntry.smali               |  635 +++++++++-----
+ smali_classes2/com/samsung/android/settings/wifi/AutoHotspotListAdapter.smali |  102 ++++++++++----
+ smali_classes2/com/samsung/android/settings/wifi/McfAutoHotspotListAdapter.smali |   90 ++++++++++----
+ smali_classes2/com/samsung/android/settings/wifi/WifiListAdapter.smali  |  109 ++++++++++----
+ smali_classes2/com/samsung/android/settings/wifi/WifiSettings.smali     |  171 +++++++++++---
+ smali_classes2/com/samsung/android/settings/wifi/details/WifiAutoConnectPreferenceController.smali |  188 ++------------
+ smali_classes2/com/samsung/android/settings/wifi/develop/WifiLabsWeeklyReportPreference.smali |   55 +++-----------
+ 11 files changed, 946 insertions(+), 566 deletions(-)
 
-diff --git a/smali/com/android/settings/wifi/slice/WifiSlice.smali b/smali/com/android/settings/wifi/slice/WifiSlice.smali
+diff --git a/smali_classes2/com/android/settings/wifi/slice/WifiSlice.smali b/smali_classes2/com/android/settings/wifi/slice/WifiSlice.smali
 index 5cd25a529..34f270dd7 100644
---- a/smali/com/android/settings/wifi/slice/WifiSlice.smali
-+++ b/smali/com/android/settings/wifi/slice/WifiSlice.smali
+--- a/smali_classes2/com/android/settings/wifi/slice/WifiSlice.smali
++++ b/smali_classes2/com/android/settings/wifi/slice/WifiSlice.smali
 @@ -25,6 +25,10 @@
  
  .field public static final STATE_SECURED:[I
@@ -170,10 +169,10 @@ index 5cd25a529..34f270dd7 100644
      invoke-static {v0}, Lcom/android/settings/Utils;->createIconWithDrawable(Landroid/graphics/drawable/Drawable;)Landroidx/core/graphics/drawable/IconCompat;
  
      move-result-object p0
-diff --git a/smali/com/android/settings/wifi/slice/WifiSliceItem.smali b/smali/com/android/settings/wifi/slice/WifiSliceItem.smali
+diff --git a/smali_classes2/com/android/settings/wifi/slice/WifiSliceItem.smali b/smali_classes2/com/android/settings/wifi/slice/WifiSliceItem.smali
 index 5208ef2cd..edc03e641 100644
---- a/smali/com/android/settings/wifi/slice/WifiSliceItem.smali
-+++ b/smali/com/android/settings/wifi/slice/WifiSliceItem.smali
+--- a/smali_classes2/com/android/settings/wifi/slice/WifiSliceItem.smali
++++ b/smali_classes2/com/android/settings/wifi/slice/WifiSliceItem.smali
 @@ -16,6 +16,8 @@
  
  .field public final mIsInstantHotspotNetwork:Z
@@ -196,11 +195,11 @@ index 5208ef2cd..edc03e641 100644
      invoke-virtual {p2}, Lcom/android/wifitrackerlib/WifiEntry;->semIsWifi6Network()Z
  
      move-result p1
-diff --git a/smali/com/android/wifitrackerlib/StandardWifiEntry$$ExternalSyntheticLambda8.smali b/smali/com/android/wifitrackerlib/StandardWifiEntry$$ExternalSyntheticLambda8.smali
+diff --git a/smali_classes2/com/android/wifitrackerlib/StandardWifiEntry$$ExternalSyntheticLambda8.smali b/smali_classes2/com/android/wifitrackerlib/StandardWifiEntry$$ExternalSyntheticLambda8.smali
 new file mode 100644
 index 000000000..cd03c8df7
 --- /dev/null
-+++ b/smali/com/android/wifitrackerlib/StandardWifiEntry$$ExternalSyntheticLambda8.smali
++++ b/smali_classes2/com/android/wifitrackerlib/StandardWifiEntry$$ExternalSyntheticLambda8.smali
 @@ -0,0 +1,40 @@
 +.class public final synthetic Lcom/android/wifitrackerlib/StandardWifiEntry$$ExternalSyntheticLambda8;
 +.super Ljava/lang/Object;
@@ -242,10 +241,10 @@ index 000000000..cd03c8df7
 +
 +    return p0
 +.end method
-diff --git a/smali/com/android/wifitrackerlib/StandardWifiEntry.smali b/smali/com/android/wifitrackerlib/StandardWifiEntry.smali
+diff --git a/smali_classes2/com/android/wifitrackerlib/StandardWifiEntry.smali b/smali_classes2/com/android/wifitrackerlib/StandardWifiEntry.smali
 index 52c395992..f7a01db6f 100644
---- a/smali/com/android/wifitrackerlib/StandardWifiEntry.smali
-+++ b/smali/com/android/wifitrackerlib/StandardWifiEntry.smali
+--- a/smali_classes2/com/android/wifitrackerlib/StandardWifiEntry.smali
++++ b/smali_classes2/com/android/wifitrackerlib/StandardWifiEntry.smali
 @@ -4475,6 +4475,51 @@
      throw p1
  .end method
@@ -298,10 +297,10 @@ index 52c395992..f7a01db6f 100644
  .method public final semIsAdminRestricted()Z
      .locals 0
  
-diff --git a/smali/com/android/wifitrackerlib/WifiEntry.smali b/smali/com/android/wifitrackerlib/WifiEntry.smali
+diff --git a/smali_classes2/com/android/wifitrackerlib/WifiEntry.smali b/smali_classes2/com/android/wifitrackerlib/WifiEntry.smali
 index 9c64c1286..3e38ed459 100644
---- a/smali/com/android/wifitrackerlib/WifiEntry.smali
-+++ b/smali/com/android/wifitrackerlib/WifiEntry.smali
+--- a/smali_classes2/com/android/wifitrackerlib/WifiEntry.smali
++++ b/smali_classes2/com/android/wifitrackerlib/WifiEntry.smali
 @@ -405,6 +405,60 @@
      return p0
  .end method
@@ -1164,10 +1163,10 @@ index 9c64c1286..3e38ed459 100644
      return-void
  .end method
  
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/AutoHotspotListAdapter.smali b/smali_classes3/com/samsung/android/settings/wifi/AutoHotspotListAdapter.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/AutoHotspotListAdapter.smali b/smali_classes2/com/samsung/android/settings/wifi/AutoHotspotListAdapter.smali
 index 17e9325ff..2c4abe3db 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/AutoHotspotListAdapter.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/AutoHotspotListAdapter.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/AutoHotspotListAdapter.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/AutoHotspotListAdapter.smali
 @@ -8,6 +8,10 @@
  
  .field public static final STATE_SECURED:[I
@@ -1461,10 +1460,10 @@ index 17e9325ff..2c4abe3db 100644
      :goto_6
      const-string p0, "onBindViewHolder() - invalid index "
  
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/McfAutoHotspotListAdapter.smali b/smali_classes3/com/samsung/android/settings/wifi/McfAutoHotspotListAdapter.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/McfAutoHotspotListAdapter.smali b/smali_classes2/com/samsung/android/settings/wifi/McfAutoHotspotListAdapter.smali
 index d42de1807..f199fa7e1 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/McfAutoHotspotListAdapter.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/McfAutoHotspotListAdapter.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/McfAutoHotspotListAdapter.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/McfAutoHotspotListAdapter.smali
 @@ -8,6 +8,10 @@
  
  .field public static final STATE_SECURED:[I
@@ -1719,10 +1718,10 @@ index d42de1807..f199fa7e1 100644
      :goto_6
      const-string p0, "onBindViewHolder() - invalid index "
  
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/WifiListAdapter.smali b/smali_classes3/com/samsung/android/settings/wifi/WifiListAdapter.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/WifiListAdapter.smali b/smali_classes2/com/samsung/android/settings/wifi/WifiListAdapter.smali
 index 0890e9479..fe6a1e4d5 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/WifiListAdapter.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/WifiListAdapter.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/WifiListAdapter.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/WifiListAdapter.smali
 @@ -14,6 +14,10 @@
  
  .field public static final STATE_WIFI5_SECURED:[I
@@ -1969,10 +1968,10 @@ index 0890e9479..fe6a1e4d5 100644
 +    :cond_14
      return-void
  .end method
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/WifiSettings.smali b/smali_classes3/com/samsung/android/settings/wifi/WifiSettings.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/WifiSettings.smali b/smali_classes2/com/samsung/android/settings/wifi/WifiSettings.smali
 index fa877d052..3d2b32515 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/WifiSettings.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/WifiSettings.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/WifiSettings.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/WifiSettings.smali
 @@ -6913,11 +6913,11 @@
  .end method
  
@@ -2279,10 +2278,10 @@ index fa877d052..3d2b32515 100644
      invoke-static {}, Landroid/os/SystemClock;->currentThreadTimeMillis()J
  
      move-result-wide v0
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/details/WifiAutoConnectPreferenceController.smali b/smali_classes3/com/samsung/android/settings/wifi/details/WifiAutoConnectPreferenceController.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/details/WifiAutoConnectPreferenceController.smali b/smali_classes2/com/samsung/android/settings/wifi/details/WifiAutoConnectPreferenceController.smali
 index 82a4e4c12..ef2d66f22 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/details/WifiAutoConnectPreferenceController.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/details/WifiAutoConnectPreferenceController.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/details/WifiAutoConnectPreferenceController.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/details/WifiAutoConnectPreferenceController.smali
 @@ -473,7 +473,7 @@
  .end method
  
@@ -2554,10 +2553,10 @@ index 82a4e4c12..ef2d66f22 100644
  .end method
  
  .method public updateState(Landroidx/preference/Preference;)V
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/develop/WifiLabsWeeklyReportPreference.smali b/smali_classes3/com/samsung/android/settings/wifi/develop/WifiLabsWeeklyReportPreference.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/develop/WifiLabsWeeklyReportPreference.smali b/smali_classes2/com/samsung/android/settings/wifi/develop/WifiLabsWeeklyReportPreference.smali
 index 0ac30f12d..60fb6273b 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/develop/WifiLabsWeeklyReportPreference.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/develop/WifiLabsWeeklyReportPreference.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/develop/WifiLabsWeeklyReportPreference.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/develop/WifiLabsWeeklyReportPreference.smali
 @@ -72,8 +72,6 @@
  
  .field public final mWeeklyDate:Ljava/util/List;

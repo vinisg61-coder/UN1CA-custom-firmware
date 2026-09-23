@@ -4,17 +4,17 @@ Date: Mon, 8 Sep 2025 23:08:13 +0200
 Subject: [PATCH] Disable MOBILEAP_PRIORITIZE_TRAFFIC support
 
 ---
- .../mobileap/WifiApCloudBackupRestore.smali   | 580 ++++++++----------
- .../wifi/mobileap/WifiApSettings$1.smali      |  37 +-
- .../WifiApSmartSwitchBackupRestore.smali      | 248 +++-----
- .../WifiApSmartPrioritySwitchController.smali |  31 +-
- .../mobileap/utils/WifiApFrameworkUtils.smali |  87 ---
- 5 files changed, 380 insertions(+), 603 deletions(-)
+ smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApCloudBackupRestore.smali |  580 +++++++-------
+ smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSettings$1.smali |   37 ++------------
+ smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSmartSwitchBackupRestore.smali |  248 +++++---------
+ smali_classes2/com/samsung/android/settings/wifi/mobileap/smartpriority/WifiApSmartPrioritySwitchController.smali |   31 +++++++++-----
+ smali_classes2/com/samsung/android/settings/wifi/mobileap/utils/WifiApFrameworkUtils.smali |   88 --------------
+ 5 files changed, 380 insertions(+), 604 deletions(-)
 
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApCloudBackupRestore.smali b/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApCloudBackupRestore.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApCloudBackupRestore.smali b/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApCloudBackupRestore.smali
 index 9595a78f1..3e99ee0d4 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApCloudBackupRestore.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApCloudBackupRestore.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApCloudBackupRestore.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApCloudBackupRestore.smali
 @@ -775,19 +775,6 @@
      :cond_16
      invoke-static {v0}, Lcom/samsung/android/settings/wifi/mobileap/utils/WifiApFeatureUtils;->isMobileDataUsageSupported(Landroid/content/Context;)Z
@@ -1493,10 +1493,10 @@ index 9595a78f1..3e99ee0d4 100644
      :try_end_a
      .catchall {:try_start_a .. :try_end_a} :catchall_1
  
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApSettings$1.smali b/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApSettings$1.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSettings$1.smali b/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSettings$1.smali
 index 0374a51f7..51108eb00 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApSettings$1.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApSettings$1.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSettings$1.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSettings$1.smali
 @@ -88,7 +88,7 @@
  
      if-eqz v1, :cond_0
@@ -1559,10 +1559,10 @@ index 0374a51f7..51108eb00 100644
 +    :goto_0
      return-object p0
  .end method
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApSmartSwitchBackupRestore.smali b/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApSmartSwitchBackupRestore.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSmartSwitchBackupRestore.smali b/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSmartSwitchBackupRestore.smali
 index ca026d7cb..6ad952c77 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApSmartSwitchBackupRestore.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/mobileap/WifiApSmartSwitchBackupRestore.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSmartSwitchBackupRestore.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/mobileap/WifiApSmartSwitchBackupRestore.smali
 @@ -987,7 +987,7 @@
  .end method
  
@@ -2153,10 +2153,10 @@ index ca026d7cb..6ad952c77 100644
      :goto_c
      throw v1
  .end method
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/mobileap/smartpriority/WifiApSmartPrioritySwitchController.smali b/smali_classes3/com/samsung/android/settings/wifi/mobileap/smartpriority/WifiApSmartPrioritySwitchController.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/mobileap/smartpriority/WifiApSmartPrioritySwitchController.smali b/smali_classes2/com/samsung/android/settings/wifi/mobileap/smartpriority/WifiApSmartPrioritySwitchController.smali
 index 7f1b83c95..079ce2b11 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/mobileap/smartpriority/WifiApSmartPrioritySwitchController.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/mobileap/smartpriority/WifiApSmartPrioritySwitchController.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/mobileap/smartpriority/WifiApSmartPrioritySwitchController.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/mobileap/smartpriority/WifiApSmartPrioritySwitchController.smali
 @@ -45,15 +45,6 @@
  
      invoke-static {p0}, Lcom/samsung/android/settings/wifi/mobileap/utils/WifiApFeatureUtils;->isMobileDataUsageSupported(Landroid/content/Context;)Z
@@ -2202,10 +2202,10 @@ index 7f1b83c95..079ce2b11 100644
  
      const/4 p0, 0x1
  
-diff --git a/smali_classes3/com/samsung/android/settings/wifi/mobileap/utils/WifiApFrameworkUtils.smali b/smali_classes3/com/samsung/android/settings/wifi/mobileap/utils/WifiApFrameworkUtils.smali
+diff --git a/smali_classes2/com/samsung/android/settings/wifi/mobileap/utils/WifiApFrameworkUtils.smali b/smali_classes2/com/samsung/android/settings/wifi/mobileap/utils/WifiApFrameworkUtils.smali
 index 071e5fc89..e84c74b6f 100644
---- a/smali_classes3/com/samsung/android/settings/wifi/mobileap/utils/WifiApFrameworkUtils.smali
-+++ b/smali_classes3/com/samsung/android/settings/wifi/mobileap/utils/WifiApFrameworkUtils.smali
+--- a/smali_classes2/com/samsung/android/settings/wifi/mobileap/utils/WifiApFrameworkUtils.smali
++++ b/smali_classes2/com/samsung/android/settings/wifi/mobileap/utils/WifiApFrameworkUtils.smali
 @@ -782,50 +782,6 @@
      return p0
  .end method

@@ -4,16 +4,16 @@ Date: Mon, 8 Sep 2025 22:24:01 +0200
 Subject: [PATCH] Disable virtual vibration support
 
 ---
- .../asbase/audio/SoundSettings$3.smali        |   24 +-
- .../ResetSoundSystemFeedbackSettings$1.smali  |    4 -
- ...alVibrationSoundPreferenceController.smali |   28 +-
- .../eternal/provider/items/SoundItem.smali    | 1070 ++++++++---------
- 4 files changed, 509 insertions(+), 617 deletions(-)
+ smali_classes5/com/samsung/android/settings/asbase/audio/SoundSettings$3.smali |   24 +++++++-------
+ smali_classes5/com/samsung/android/settings/asbase/reset/ResetSoundSystemFeedbackSettings$1.smali |    4 --------------
+ smali_classes5/com/samsung/android/settings/asbase/vibration/VirtualVibrationSoundPreferenceController.smali |   28 +++++---------
+ smali_classes5/com/samsung/android/settings/eternal/provider/items/SoundItem.smali | 1071 ++++++--------
+ 4 files changed, 509 insertions(+), 618 deletions(-)
 
-diff --git a/smali_classes4/com/samsung/android/settings/asbase/audio/SoundSettings$3.smali b/smali_classes4/com/samsung/android/settings/asbase/audio/SoundSettings$3.smali
+diff --git a/smali_classes5/com/samsung/android/settings/asbase/audio/SoundSettings$3.smali b/smali_classes5/com/samsung/android/settings/asbase/audio/SoundSettings$3.smali
 index 790363cf4..27acb42a0 100644
---- a/smali_classes4/com/samsung/android/settings/asbase/audio/SoundSettings$3.smali
-+++ b/smali_classes4/com/samsung/android/settings/asbase/audio/SoundSettings$3.smali
+--- a/smali_classes5/com/samsung/android/settings/asbase/audio/SoundSettings$3.smali
++++ b/smali_classes5/com/samsung/android/settings/asbase/audio/SoundSettings$3.smali
 @@ -168,28 +168,28 @@
      invoke-virtual {v0, p1}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
  
@@ -55,10 +55,10 @@ index 790363cf4..27acb42a0 100644
  
      return-object p0
  .end method
-diff --git a/smali_classes4/com/samsung/android/settings/asbase/reset/ResetSoundSystemFeedbackSettings$1.smali b/smali_classes4/com/samsung/android/settings/asbase/reset/ResetSoundSystemFeedbackSettings$1.smali
+diff --git a/smali_classes5/com/samsung/android/settings/asbase/reset/ResetSoundSystemFeedbackSettings$1.smali b/smali_classes5/com/samsung/android/settings/asbase/reset/ResetSoundSystemFeedbackSettings$1.smali
 index 293ca5226..bf4a9a453 100644
---- a/smali_classes4/com/samsung/android/settings/asbase/reset/ResetSoundSystemFeedbackSettings$1.smali
-+++ b/smali_classes4/com/samsung/android/settings/asbase/reset/ResetSoundSystemFeedbackSettings$1.smali
+--- a/smali_classes5/com/samsung/android/settings/asbase/reset/ResetSoundSystemFeedbackSettings$1.smali
++++ b/smali_classes5/com/samsung/android/settings/asbase/reset/ResetSoundSystemFeedbackSettings$1.smali
 @@ -349,9 +349,5 @@
  
      invoke-static {p0, p1, v2}, Landroid/provider/Settings$System;->putInt(Landroid/content/ContentResolver;Ljava/lang/String;I)Z
@@ -69,10 +69,10 @@ index 293ca5226..bf4a9a453 100644
 -
      return-void
  .end method
-diff --git a/smali_classes4/com/samsung/android/settings/asbase/vibration/VirtualVibrationSoundPreferenceController.smali b/smali_classes4/com/samsung/android/settings/asbase/vibration/VirtualVibrationSoundPreferenceController.smali
+diff --git a/smali_classes5/com/samsung/android/settings/asbase/vibration/VirtualVibrationSoundPreferenceController.smali b/smali_classes5/com/samsung/android/settings/asbase/vibration/VirtualVibrationSoundPreferenceController.smali
 index 4067c0e24..69fb2612a 100644
---- a/smali_classes4/com/samsung/android/settings/asbase/vibration/VirtualVibrationSoundPreferenceController.smali
-+++ b/smali_classes4/com/samsung/android/settings/asbase/vibration/VirtualVibrationSoundPreferenceController.smali
+--- a/smali_classes5/com/samsung/android/settings/asbase/vibration/VirtualVibrationSoundPreferenceController.smali
++++ b/smali_classes5/com/samsung/android/settings/asbase/vibration/VirtualVibrationSoundPreferenceController.smali
 @@ -131,7 +131,7 @@
  .method public getAvailabilityStatus()I
      .locals 0
@@ -130,10 +130,10 @@ index 4067c0e24..69fb2612a 100644
      new-instance p0, Lcom/samsung/android/settings/cube/ControlResult;
  
      invoke-direct {p0, v0}, Lcom/samsung/android/settings/cube/ControlResult;-><init>(Lcom/samsung/android/settings/cube/ControlResult$Builder;)V
-diff --git a/smali_classes4/com/samsung/android/settings/eternal/provider/items/SoundItem.smali b/smali_classes4/com/samsung/android/settings/eternal/provider/items/SoundItem.smali
+diff --git a/smali_classes5/com/samsung/android/settings/eternal/provider/items/SoundItem.smali b/smali_classes5/com/samsung/android/settings/eternal/provider/items/SoundItem.smali
 index ab0d08338..48a7f1432 100644
---- a/smali_classes4/com/samsung/android/settings/eternal/provider/items/SoundItem.smali
-+++ b/smali_classes4/com/samsung/android/settings/eternal/provider/items/SoundItem.smali
+--- a/smali_classes5/com/samsung/android/settings/eternal/provider/items/SoundItem.smali
++++ b/smali_classes5/com/samsung/android/settings/eternal/provider/items/SoundItem.smali
 @@ -925,7 +925,7 @@
  
      packed-switch v1, :pswitch_data_0
